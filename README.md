@@ -1,4 +1,4 @@
-![logo](https://github.com/WernerPetrick/comet/blob/main/images/comet_text.png)
+![logo](https://github.com/WernerPetrick/comet/blob/main/images/Comet_logo.png)
 
 Comet is a static‑first site framework for Ruby. Write pages in Markdown, drop in reusable ERB shards (components), and choose exactly when each one hydrates in the browser. The output is plain, cacheable HTML plus a small hydration script for the interactive bits you opt into.
 
