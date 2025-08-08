@@ -1,0 +1,11 @@
+<button class="button is-<%= prop(:variant, 'primary') %> <%= 'is-loading' if prop(:loading) %>" 
+        data-action="<%= prop(:action) %>"
+        <% if prop(:size) %>size="<%= prop(:size) %>"<% end %>
+        <% if hydrate? %>data-interactive="true"<% end %>>
+  <% if prop(:icon) %>
+    <span class="icon">
+      <i class="<%= prop(:icon) %>"></i>
+    </span>
+  <% end %>
+  <span><%= prop(:text, 'Click me') %></span>
+</button>

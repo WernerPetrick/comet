@@ -1,0 +1,46 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+
+# rspec failure tracking
+.rspec_status
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Build artifacts
+dist/
+build/
+
+# Node modules (if using npm for any tooling)
+node_modules/
+
+# Ruby version files
+.ruby-version
+.rvmrc
+
+# Bundler
+vendor/bundle/
+.bundle/
+
+# Test coverage
+/coverage/
+
+# Environment files
+.env
+.env.local

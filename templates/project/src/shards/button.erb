@@ -1,0 +1,7 @@
+<button 
+  class="btn btn-<%= prop(:variant, 'primary') %>" 
+  data-action="<%= prop(:action) %>"
+  <% if hydrate? %>data-interactive="true"<% end %>
+>
+  <%= prop(:text, 'Click me') %>
+</button>

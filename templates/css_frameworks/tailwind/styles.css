@@ -1,0 +1,82 @@
+/* Import Tailwind CSS */
+@import url("https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css");
+
+/* Custom Comet styles with Tailwind */
+@layer utilities {
+	.gradient-comet {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	}
+
+	.gradient-comet-hover:hover {
+		background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+	}
+
+	.text-gradient-comet {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.shadow-comet {
+		box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.1), 0 2px 4px -1px
+			rgba(102, 126, 234, 0.06);
+	}
+
+	.shadow-comet-lg {
+		box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.1), 0 4px 6px -2px
+			rgba(102, 126, 234, 0.05);
+	}
+
+	.ring-comet {
+		--tw-ring-color: rgb(102 126 234 / 0.5);
+	}
+
+	.border-gradient-comet {
+		border-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) 1;
+	}
+}
+
+@layer components {
+	.btn-comet {
+		@apply px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg focus:ring-4 focus:ring-purple-200 focus:outline-none;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	}
+
+	.btn-comet:hover {
+		background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+	}
+
+	.card-comet {
+		@apply bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+	}
+
+	.navbar-comet {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	}
+
+	.input-comet {
+		@apply block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors;
+	}
+
+	.hero-comet {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	}
+}
+
+/* Custom animations */
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.spin-slow {
+	animation: spin 3s linear infinite;
+}
+
+/* Loading spinner */
+.spinner-comet {
+	@apply inline-block w-4 h-4 border-2 border-purple-200 border-t-purple-600 rounded-full;
+	animation: spin 1s linear infinite;
+}

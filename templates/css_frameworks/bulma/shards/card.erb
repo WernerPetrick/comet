@@ -1,0 +1,47 @@
+<div class="card">
+  <% if prop(:image) %>
+    <div class="card-image">
+      <figure class="image is-<%= prop(:image_ratio, '4by3') %>">
+        <%= image_tag asset_path(prop(:image)), alt: prop(:title) %>
+      </figure>
+    </div>
+  <% end %>
+
+  <div class="card-content">
+    <div class="content">
+      <% if prop(:title) %>
+        <h3 class="title is-<%= prop(:title_size, '4') %>"><%= prop(:title) %></h3>
+      <% end %>
+      
+      <% if prop(:subtitle) %>
+        <h4 class="subtitle is-<%= prop(:subtitle_size, '6') %>"><%= prop(:subtitle) %></h4>
+      <% end %>
+      
+      <div class="content">
+        <%= prop(:content, 'Card content goes here') %>
+      </div>
+      
+      <% if prop(:meta) %>
+        <div class="content is-small">
+          <%= prop(:meta) %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <% if prop(:footer) || prop(:buttons) %>
+    <footer class="card-footer">
+      <% if prop(:buttons) %>
+        <% prop(:buttons).each do |button| %>
+          <a href="<%= button[:link] || '#' %>" class="card-footer-item">
+            <%= button[:text] %>
+          </a>
+        <% end %>
+      <% else %>
+        <div class="card-footer-item">
+          <%= prop(:footer) %>
+        </div>
+      <% end %>
+    </footer>
+  <% end %>
+</div>

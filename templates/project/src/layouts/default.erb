@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <meta name="description" content="<%= description %>">
+  <link rel="stylesheet" href="<%= asset_path('styles.css') %>">
+</head>
+<body>
+  <header class="header">
+    <nav class="nav">
+      <a href="/" class="logo">🚀 <%= site.title %></a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="main">
+    <%= content %>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2025 <%= site.title %>. Built with Comet.</p>
+  </footer>
+
+  <script src="<%= asset_path('hydration.js') %>"></script>
+</body>
+</html>

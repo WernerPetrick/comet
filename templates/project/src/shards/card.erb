@@ -1,0 +1,17 @@
+<article class="card">
+  <% if prop(:title) %>
+    <h2 class="card-title"><%= prop(:title) %></h2>
+  <% end %>
+  
+  <div class="card-content">
+    <%= prop(:content, 'Card content goes here') %>
+  </div>
+  
+  <% if prop(:link) %>
+    <div class="card-footer">
+      <a href="<%= prop(:link) %>" class="card-link">
+        <%= prop(:link_text, 'Read more') %>
+      </a>
+    </div>
+  <% end %>
+</article>
