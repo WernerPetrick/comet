@@ -1,10 +1,11 @@
 require "erb"
 require "ostruct"
 require "front_matter_parser"
+require "date"
 
 module Comet
   class Project
-    attr_reader :root_path, :config
+  attr_reader :root_path, :config
 
     def initialize(root_path)
       @root_path = root_path
@@ -81,6 +82,24 @@ module Comet
       Dir.glob(File.join(shards_path, "**", "*.erb"))
     end
 
+    # ---------------- Collections System (generalized Option B) ----------------
+
+    def collections
+      @collections ||= build_collections
+    end
+
+    def collection_definitions
+      @collection_definitions ||= (@config.respond_to?(:_collection_definitions) ? @config._collection_definitions : [])
+    end
+
+    def tags_index
+      @tags_index ||= build_tags_index
+    end
+
+    def any_tags?
+      tags_index.any?
+    end
+
     private
 
   def load_config
@@ -94,6 +113,7 @@ module Comet
             description: "A site built with Comet"
           )
         )
+        inject_collections_dsl(@config)
         @config.instance_eval(File.read(config_file))
       else
         @config = OpenStruct.new(
@@ -104,6 +124,16 @@ module Comet
             description: "A site built with Comet"
           )
         )
+      end
+    end
+
+    def inject_collections_dsl(cfg)
+      cfg.define_singleton_method(:_collection_definitions) { @_collection_definitions ||= [] }
+      cfg.define_singleton_method(:collections) do |&block|
+        instance_eval(&block) if block
+      end
+      cfg.define_singleton_method(:collection) do |name, **opts|
+        _collection_definitions << OpenStruct.new(name: name.to_sym, options: opts)
       end
     end
 
@@ -174,6 +204,122 @@ module Comet
         file: index_file,
         url: fm["url"] # optional if group should be clickable
       )
+    end
+
+    # -------- Collections helpers --------
+
+    def build_collections
+      collection_definitions.map { |defn| build_collection(defn) }.compact
+    end
+
+    def build_collection(defn)
+      opts = defn.options
+      source = File.join(src_path, opts[:source] || "collections/#{defn.name}")
+      return nil unless Dir.exist?(source)
+      template = opts[:template] || "pages/#{defn.name}/[slug].md"
+      template_path = File.join(src_path, template)
+      unless File.exist?(template_path)
+        warn "[Comet] Collection :#{defn.name} missing template #{template_path}, skipping"
+        return nil
+      end
+      output_dir = opts[:output_dir] || defn.name.to_s
+      permalink = opts[:permalink] # e.g. "/blog/:year/:month/:slug/"
+      feed = opts.fetch(:feed, false)
+      tags_enabled = opts.fetch(:tags, false)
+      items = Dir.glob(File.join(source, "*.{md,markdown}"))
+                 .map { |f| build_collection_item(f, defn.name, output_dir, permalink, tags_enabled) }
+                 .compact
+      # sort
+      sort_cfg = opts[:sort]
+      items = sort_collection_items(items, sort_cfg)
+      OpenStruct.new(
+        name: defn.name,
+        definition: defn,
+        template_path: template_path,
+        output_dir: output_dir,
+        permalink: permalink,
+        feed: feed,
+        tags: tags_enabled,
+        items: items
+      )
+    end
+
+    def build_collection_item(file, collection_name, output_dir, permalink, tags_enabled)
+      fm = parse_front_matter(file)
+      raw = File.read(file)
+      content_part = raw.split(/^---\s*$\n?/).last.to_s
+      slug = (fm["slug"] || File.basename(file, File.extname(file))).downcase.gsub(/[^a-z0-9]+/, '-').gsub(/^-|-$/, '')
+      date = begin
+        fm["date"] ? Date.parse(fm["date"].to_s) : File.mtime(file).to_date
+      rescue
+        Date.today
+      end
+      tags = []
+      if tags_enabled
+        raw_tags = fm["tags"]
+        if raw_tags.is_a?(String)
+          tags = raw_tags.split(/[,;]+/)
+        elsif raw_tags.is_a?(Array)
+          tags = raw_tags
+        end
+        tags = tags.map { |t| t.to_s.strip }.reject(&:empty?).map { |t| t.downcase }
+      end
+      excerpt = fm["excerpt"] || begin
+        para = content_part.split(/\n\n+/).find { |p| p.strip.length > 20 }
+        para ? para.strip.gsub(/\n+/, ' ')[0,220] : nil
+      end
+      url = if permalink
+        build_permalink(permalink, slug, date, output_dir)
+      else
+        "/#{output_dir}/#{slug}/"
+      end
+      OpenStruct.new(
+        collection: collection_name,
+        slug: slug,
+        title: fm["title"] || slug.tr('-', ' ').split.map(&:capitalize).join(' '),
+        date: date,
+        url: url,
+        frontmatter: fm,
+        excerpt: excerpt,
+        tags: tags,
+        source_file: file,
+        raw_content: content_part
+      )
+    end
+
+    def sort_collection_items(items, sort_cfg)
+      return items.sort_by { |p| [-p.date.to_time.to_i, p.title] } unless sort_cfg
+      field = (sort_cfg[:field] || :date).to_sym
+      order = (sort_cfg[:order] || :desc).to_sym
+      items.sort_by! do |it|
+        v = it.send(field) rescue nil
+        v.is_a?(Date) ? v.to_time.to_i : v
+      end
+      items.reverse! if order == :desc
+      items
+    end
+
+    def build_permalink(pattern, slug, date, output_dir)
+      year = date.year
+      month = format('%02d', date.month)
+      day = format('%02d', date.day)
+      pattern.gsub(':year', year.to_s)
+             .gsub(':month', month.to_s)
+             .gsub(':day', day.to_s)
+             .gsub(':slug', slug)
+    end
+
+    def build_tags_index
+      tag_map = Hash.new { |h,k| h[k] = [] }
+      collections.each do |col|
+        next unless col&.tags
+        col.items.each do |item|
+          item.tags.each { |t| tag_map[t] << item }
+        end
+      end
+      # sort items inside each tag by date desc
+      tag_map.each { |_, arr| arr.sort_by! { |p| [-p.date.to_time.to_i, p.title] } }
+      tag_map
     end
   end
 end
