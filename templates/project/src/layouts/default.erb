@@ -7,6 +7,7 @@
   <link rel="canonical" href="<%= canonical_url %>">
   <%= meta_tags %>
   <link rel="stylesheet" href="<%= asset_path('styles.css') %>">
+  <script src="<%= asset_path('vendor/stimulus.umd.js') %>" defer></script>
 </head>
 <body>
   <header class="header">
@@ -45,6 +46,10 @@
     <p>&copy; 2025 <%= site.title %>. Built with Comet.</p>
   </footer>
 
-  <script src="<%= asset_path('hydration.js') %>"></script>
+  <!-- Defer controllers so Stimulus (also deferred) initializes first -->
+  <script src="<%= asset_path('controllers/comet_shard_controller.js') %>" defer></script>
+  <script src="<%= asset_path('controllers/shard_counter_controller.js') %>" defer></script>
+  <script src="<%= asset_path('controllers/shard_props_viewer_controller.js') %>" defer></script>
+  <script src="<%= asset_path('controllers/shard_filter_list_controller.js') %>" defer></script>
 </body>
 </html>

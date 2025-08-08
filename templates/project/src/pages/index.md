@@ -13,6 +13,23 @@ Here's a simple button shard:
 
 <%= shard "button", props: { text: "Get Started", variant: "primary" }, hydrate: "load" %>
 
+## Stimulus Counter Example
+
+Below is a hydrated counter shard powered by a Stimulus controller. It auto-maps the shard name `counter` to the controller `shard-counter`.
+
+<%= shard "counter", props: { start: "5" }, hydrate: "immediate" %>
+
+The ERB for this shard lives at `src/shards/counter.erb` and looks like:
+
+```
+<div data-controller="shard-counter" data-shard-counter-start-value="3">
+	<span data-role="count"></span>
+	<button type="button" data-action="click->shard-counter#increment">+1</button>
+</div>
+```
+
+Because we passed `props: { start: "5" }` above, that overrides the inline `data-shard-counter-start-value` of `3`.
+
 ## Features
 
 - **Markdown-first** - Write content in Markdown

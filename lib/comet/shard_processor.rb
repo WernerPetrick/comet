@@ -62,12 +62,24 @@ module Comet
       # This is a simplified version - you might want to use a proper parser
       options = {}
       
-      # Extract props
-      if options_str.match(/props:\s*\{([^}]+)\}/)
-        props_str = $1
+      # Extract props (supports simple key:"value" and key:["a","b"] pairs)
+      if options_str.match(/props:\s*\{(.*?)\}/m)
+        props_block = $1
         props = {}
-        props_str.scan(/(\w+):\s*"([^"]*)"/) do |key, value|
-          props[key.to_sym] = value
+        # Scan for key: <value> where value is array or quoted string
+        props_block.scan(/(\w+):\s*(\[[^\]]*\]|"[^"]*"|\d+|true|false|null)/).each do |key, raw_val|
+          val = case raw_val
+                when /^"(.*)"$/ then $1
+                when /^\[(.*)\]$/
+                  inner = $1
+                  inner.scan(/"([^"]*)"/).flatten
+                when /^\d+$/ then raw_val.to_i
+                when 'true' then true
+                when 'false' then false
+                when 'null' then nil
+                else raw_val
+                end
+          props[key.to_sym] = val
         end
         options[:props] = props
       end
@@ -145,13 +157,27 @@ module Comet
       hydration_id = "shard-#{shard_name}-#{rand(10000)}"
       hydration_strategy = options[:hydrate] || "load"
       
-      props_json = options[:props] ? options[:props].to_json : "{}"
+      props_hash = options[:props] || {}
+      props_json = props_hash.to_json
+      data_items_attr = ""
+      if props_hash.is_a?(Hash) && props_hash[:items].is_a?(Array)
+        encoded = props_hash[:items].map { |i| i.to_s.gsub('"','&quot;').gsub('|','/') }.join('|')
+        data_items_attr = " data-items=\"#{encoded}\""
+      end
+      # Determine Stimulus controller mapping. User can override via controller: "name" in shard options.
+      controller_attr = options[:controller]
+      unless controller_attr
+        # auto-map shard_name -> shard-<normalized-name>
+        normalized = shard_name.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/^-|-$/, '')
+        controller_attr = "shard-#{normalized}"
+      end
       
       <<~HTML
-        <div id="#{hydration_id}" 
-             data-shard="#{shard_name}" 
-             data-hydrate="#{hydration_strategy}"
-             data-props='#{props_json}'>
+  <div id="#{hydration_id}" 
+       data-shard="#{shard_name}" 
+       data-hydrate="#{hydration_strategy}"
+       data-props='#{props_json}'
+       data-controller='#{controller_attr}'#{data_items_attr}>
           #{content}
         </div>
         <script>

@@ -1,6 +1,8 @@
+require_relative "lib/comet/version"
+
 Gem::Specification.new do |spec|
   spec.name = "comet"
-  spec.version = "0.3.0"
+  spec.version = Comet::VERSION
   spec.authors = ["Werner Petrick"]
 
   spec.summary = "A Ruby-based static site generator"

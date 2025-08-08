@@ -4,6 +4,7 @@ require "cgi"
 require "erb"
 require "json"
 require "time"
+require "set"
 
 module Comet
   class BuildSystem
@@ -288,6 +289,25 @@ module Comet
       end
 
       def asset_path(path)
+        # Safety warnings for missing JS controller / vendor assets
+        begin
+          @__warned_missing ||= Set.new
+          if path.start_with?("controllers/")
+            physical = File.join(@project.assets_path, path)
+            unless File.exist?(physical) || @__warned_missing.include?(path)
+              puts "⚠️  Missing controller asset referenced: #{path} (expected at src/assets/#{path}).\n    Create it or remove the <script> tag from your layout."
+              @__warned_missing << path
+            end
+          elsif path == "vendor/stimulus.umd.js"
+            physical = File.join(@project.assets_path, path)
+            unless File.exist?(physical) || @__warned_missing.include?(path)
+              puts "⚠️  Missing vendored Stimulus: #{path} (expected at src/assets/#{path}).\n    Download with: curl -L https://unpkg.com/@hotwired/stimulus@3.2.2/dist/stimulus.umd.js -o src/assets/vendor/stimulus.umd.js"
+              @__warned_missing << path
+            end
+          end
+        rescue => _e
+          # Never break build due to warning logic
+        end
         "/assets/#{path}"
       end
 
@@ -367,164 +387,163 @@ module Comet
       else
         '/' + (base == 'index' ? '' : base + '/')
       end
-
-      # ---- Collection builders ----
-      def build_blog_collection
-        puts "📝 Building blog posts..."
-        template_path = @project.blog_template_path
-        template_fm = FrontMatterParser::Parser.parse_file(template_path).front_matter rescue {}
-        raw = File.read(template_path)
-        parts = raw.split(/^---\s*$\n?/)
-        template_body = parts.length > 2 ? parts[2..].join : parts.first
-        @project.blog_posts.each do |post|
-          html = render_blog_post(post, template_fm, template_body)
-          output_path = get_output_path(Pathname.new("blog/#{post.slug}.md"))
-          FileUtils.mkdir_p(File.dirname(output_path))
-          File.write(output_path, html)
-          puts "  ✓ blog/#{post.slug} → #{Pathname.new(output_path).relative_path_from(Pathname.new(@project.dist_path))}"
-        end
-      end
-
-      def render_blog_post(post, template_fm, template_body)
-        merged_fm = template_fm.merge(post.frontmatter || {})
-        merged_fm["title"] ||= post.title
-        merged_fm["description"] ||= post.excerpt
-        body = template_body.dup
-        replacements = {
-          "{{content}}" => File.read(post.source_file).split(/^---\s*$\n?/).last.to_s,
-          "{{title}}" => post.title.to_s,
-          "{{date}}" => post.date.to_s,
-          "{{slug}}" => post.slug.to_s,
-          "{{excerpt}}" => (post.excerpt || '').to_s
-        }
-        replacements.each { |k,v| body.gsub!(k, v) }
-        processed = @markdown_processor.process_content(body, merged_fm)
-        page_url = "/blog/#{post.slug}/"
-        apply_layout(processed, page_url)
-      end
     end
-  end
-
-  # -------- General Collections --------
-  def build_collections
-    @project.collections.each do |col|
-      next unless col # skip nil
-      puts "📚 Building collection: #{col.name} (#{col.items.size} items)"
-      template_raw = File.read(col.template_path)
-      template_fm = FrontMatterParser::Parser.parse_file(col.template_path).front_matter rescue {}
-      parts = template_raw.split(/^---\s*$\n?/)
+    # ---- Legacy blog collection (kept for backward compatibility) ----
+    def build_blog_collection
+      puts "📝 Building blog posts..."
+      template_path = @project.blog_template_path
+      template_fm = FrontMatterParser::Parser.parse_file(template_path).front_matter rescue {}
+      raw = File.read(template_path)
+      parts = raw.split(/^---\s*$\n?/)
       template_body = parts.length > 2 ? parts[2..].join : parts.first
-      col.items.each do |item|
-        html = render_collection_item(item, col, template_fm, template_body)
-        logical_md = logical_md_from_url(item.url)
-        output_path = get_output_path(Pathname.new(logical_md))
+      @project.blog_posts.each do |post|
+        html = render_blog_post(post, template_fm, template_body)
+        output_path = get_output_path(Pathname.new("blog/#{post.slug}.md"))
         FileUtils.mkdir_p(File.dirname(output_path))
         File.write(output_path, html)
-        puts "  ✓ #{item.collection}:#{item.slug} → #{Pathname.new(output_path).relative_path_from(Pathname.new(@project.dist_path))}"
+        puts "  ✓ blog/#{post.slug} → #{Pathname.new(output_path).relative_path_from(Pathname.new(@project.dist_path))}"
       end
     end
-  end
 
-  def render_collection_item(item, col, template_fm, template_body)
-    merged_fm = template_fm.merge(item.frontmatter || {})
-    merged_fm["title"] ||= item.title
-    merged_fm["description"] ||= item.excerpt
-    body = template_body.dup
-    replacements = {
-      "{{content}}" => item.raw_content,
-      "{{title}}" => item.title.to_s,
-      "{{date}}" => item.date.to_s,
-      "{{slug}}" => item.slug.to_s,
-      "{{excerpt}}" => (item.excerpt || '').to_s
-    }
-    replacements.each { |k,v| body.gsub!(k, v) }
-    processed = @markdown_processor.process_content(body, merged_fm)
-    apply_layout(processed, item.url)
-  end
-
-  def logical_md_from_url(url)
-    # /blog/slug/ -> blog/slug.md
-    path = url.sub(%r{^/}, '').sub(%r{/$}, '')
-    path + '.md'
-  end
-
-  # -------- Tags --------
-  def build_tags_pages
-    puts "🏷  Building tag pages..."
-    index_md_content = build_tag_index_markdown
-    processed_index = @markdown_processor.process_content(index_md_content, { 'title' => 'Tags' })
-    index_html = apply_layout(processed_index, '/tags/')
-    index_output = get_output_path(Pathname.new('tags/index.md'))
-    FileUtils.mkdir_p(File.dirname(index_output))
-    File.write(index_output, index_html)
-    puts "  ✓ tags/index"
-    @project.tags_index.each do |tag, items|
-      tag_md = build_single_tag_markdown(tag, items)
-      processed = @markdown_processor.process_content(tag_md, { 'title' => "Tag: #{tag}" })
-      html = apply_layout(processed, "/tags/#{tag}/")
-      out = get_output_path(Pathname.new("tags/#{tag}.md"))
-      FileUtils.mkdir_p(File.dirname(out))
-      File.write(out, html)
-      puts "  ✓ tags/#{tag}"
+    def render_blog_post(post, template_fm, template_body)
+      merged_fm = template_fm.merge(post.frontmatter || {})
+      merged_fm["title"] ||= post.title
+      merged_fm["description"] ||= post.excerpt
+      body = template_body.dup
+      replacements = {
+        "{{content}}" => File.read(post.source_file).split(/^---\s*$\n?/).last.to_s,
+        "{{title}}" => post.title.to_s,
+        "{{date}}" => post.date.to_s,
+        "{{slug}}" => post.slug.to_s,
+        "{{excerpt}}" => (post.excerpt || '').to_s
+      }
+      replacements.each { |k,v| body.gsub!(k, v) }
+      processed = @markdown_processor.process_content(body, merged_fm)
+      page_url = "/blog/#{post.slug}/"
+      apply_layout(processed, page_url)
     end
-  end
 
-  def build_tag_index_markdown
-    lines = ["# Tags", "", "Total: #{@project.tags_index.keys.size}"]
-    sorted = @project.tags_index.keys.sort
-    lines << "" << "<ul>"
-    sorted.each do |t|
-      lines << %(<li><a href="/tags/#{t}/">#{t} (#{@project.tags_index[t].size})</a></li>)
+    # -------- General Collections --------
+    def build_collections
+      @project.collections.each do |col|
+        next unless col # skip nil
+        puts "📚 Building collection: #{col.name} (#{col.items.size} items)"
+        template_raw = File.read(col.template_path)
+        template_fm = FrontMatterParser::Parser.parse_file(col.template_path).front_matter rescue {}
+        parts = template_raw.split(/^---\s*$\n?/)
+        template_body = parts.length > 2 ? parts[2..].join : parts.first
+        col.items.each do |item|
+          html = render_collection_item(item, col, template_fm, template_body)
+          logical_md = logical_md_from_url(item.url)
+          output_path = get_output_path(Pathname.new(logical_md))
+          FileUtils.mkdir_p(File.dirname(output_path))
+          File.write(output_path, html)
+          puts "  ✓ #{item.collection}:#{item.slug} → #{Pathname.new(output_path).relative_path_from(Pathname.new(@project.dist_path))}"
+        end
+      end
     end
-    lines << "</ul>" << ""
-    lines.join("\n")
-  end
 
-  def build_single_tag_markdown(tag, items)
-    lines = ["# Tag: #{tag}", "", "<ul>"]
-    items.each do |it|
-      date_str = it.date ? it.date.to_s : ''
-      lines << %(<li><a href="#{it.url}">#{it.title}</a> #{date_str}</li>)
+    def render_collection_item(item, col, template_fm, template_body)
+      merged_fm = template_fm.merge(item.frontmatter || {})
+      merged_fm["title"] ||= item.title
+      merged_fm["description"] ||= item.excerpt
+      body = template_body.dup
+      replacements = {
+        "{{content}}" => item.raw_content,
+        "{{title}}" => item.title.to_s,
+        "{{date}}" => item.date.to_s,
+        "{{slug}}" => item.slug.to_s,
+        "{{excerpt}}" => (item.excerpt || '').to_s
+      }
+      replacements.each { |k,v| body.gsub!(k, v) }
+      processed = @markdown_processor.process_content(body, merged_fm)
+      apply_layout(processed, item.url)
     end
-    lines << "</ul>" << ""
-    lines.join("\n")
-  end
 
-  # -------- Feeds (JSON) --------
-  def generate_collection_feeds
-    @project.collections.each do |col|
-      next unless col && col.feed
-      generate_json_feed_for(col)
+    def logical_md_from_url(url)
+      # /blog/slug/ -> blog/slug.md
+      path = url.sub(%r{^/}, '').sub(%r{/$}, '')
+      path + '.md'
     end
-  end
 
-  def generate_json_feed_for(col)
-    puts "📰 Generating feed for #{col.name}"
-    site = @project.config.site
-    base = site.respond_to?(:url) && site.url ? site.url.sub(/\/$/, '') : nil
-    feed_items = col.items.first(20).map do |it|
-      abs = base ? base + it.url : it.url
-      html_content = @markdown_processor.process_content(it.raw_content, {})
-      {
-        id: abs,
-        url: abs,
-        title: it.title,
-        content_html: html_content,
-        date_published: it.date&.to_time&.utc&.iso8601,
-        tags: it.tags,
-        image: it.frontmatter["image"] || it.frontmatter["og_image"]
+    # -------- Tags --------
+    def build_tags_pages
+      puts "🏷  Building tag pages..."
+      index_md_content = build_tag_index_markdown
+      processed_index = @markdown_processor.process_content(index_md_content, { 'title' => 'Tags' })
+      index_html = apply_layout(processed_index, '/tags/')
+      index_output = get_output_path(Pathname.new('tags/index.md'))
+      FileUtils.mkdir_p(File.dirname(index_output))
+      File.write(index_output, index_html)
+      puts "  ✓ tags/index"
+      @project.tags_index.each do |tag, items|
+        tag_md = build_single_tag_markdown(tag, items)
+        processed = @markdown_processor.process_content(tag_md, { 'title' => "Tag: #{tag}" })
+        html = apply_layout(processed, "/tags/#{tag}/")
+        out = get_output_path(Pathname.new("tags/#{tag}.md"))
+        FileUtils.mkdir_p(File.dirname(out))
+        File.write(out, html)
+        puts "  ✓ tags/#{tag}"
+      end
+    end
+
+    def build_tag_index_markdown
+      lines = ["# Tags", "", "Total: #{@project.tags_index.keys.size}"]
+      sorted = @project.tags_index.keys.sort
+      lines << "" << "<ul>"
+      sorted.each do |t|
+        lines << %(<li><a href="/tags/#{t}/">#{t} (#{@project.tags_index[t].size})</a></li>)
+      end
+      lines << "</ul>" << ""
+      lines.join("\n")
+    end
+
+    def build_single_tag_markdown(tag, items)
+      lines = ["# Tag: #{tag}", "", "<ul>"]
+      items.each do |it|
+        date_str = it.date ? it.date.to_s : ''
+        lines << %(<li><a href="#{it.url}">#{it.title}</a> #{date_str}</li>)
+      end
+      lines << "</ul>" << ""
+      lines.join("\n")
+    end
+
+    # -------- Feeds (JSON) --------
+    def generate_collection_feeds
+      @project.collections.each do |col|
+        next unless col && col.feed
+        generate_json_feed_for(col)
+      end
+    end
+
+    def generate_json_feed_for(col)
+      puts "📰 Generating feed for #{col.name}"
+      site = @project.config.site
+      base = site.respond_to?(:url) && site.url ? site.url.sub(/\/$/, '') : nil
+      feed_items = col.items.first(20).map do |it|
+        abs = base ? base + it.url : it.url
+        html_content = @markdown_processor.process_content(it.raw_content, {})
+        {
+          id: abs,
+          url: abs,
+          title: it.title,
+          content_html: html_content,
+          date_published: it.date&.to_time&.utc&.iso8601,
+          tags: it.tags,
+          image: it.frontmatter["image"] || it.frontmatter["og_image"]
+        }.compact
+      end
+      feed = {
+        version: "https://jsonfeed.org/version/1",
+        title: site.title.to_s + " – #{col.name.to_s.capitalize}",
+        home_page_url: base,
+        feed_url: base ? base + "/#{col.output_dir}/feed.json" : nil,
+        items: feed_items
       }.compact
+      feed_path = File.join(@project.dist_path, col.output_dir, 'feed.json')
+      FileUtils.mkdir_p(File.dirname(feed_path))
+      File.write(feed_path, JSON.pretty_generate(feed))
+      puts "  ✓ #{col.output_dir}/feed.json"
     end
-    feed = {
-      version: "https://jsonfeed.org/version/1",
-      title: site.title.to_s + " – #{col.name.to_s.capitalize}",
-      home_page_url: base,
-      feed_url: base ? base + "/#{col.output_dir}/feed.json" : nil,
-      items: feed_items
-    }.compact
-    feed_path = File.join(@project.dist_path, col.output_dir, 'feed.json')
-    FileUtils.mkdir_p(File.dirname(feed_path))
-    File.write(feed_path, JSON.pretty_generate(feed))
-    puts "  ✓ #{col.output_dir}/feed.json"
   end
 end

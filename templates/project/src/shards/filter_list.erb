@@ -1,0 +1,14 @@
+<div class="filter-list">
+  <label class="filter-list__control" style="display:flex; gap:0.5rem; align-items:center;">
+    <span>Filter:</span>
+    <input type="text" data-role="filter-input" placeholder="Type to filter..." />
+  </label>
+  <ul class="filter-list__items" data-role="items" style="margin:.75rem 0; padding-left:1.1rem;">
+    <% if props[:items].is_a?(Array) %>
+      <% props[:items].each do |it| %>
+        <li><%= it %></li>
+      <% end %>
+    <% end %>
+  </ul>
+  <p class="filter-list__empty" data-role="empty" style="display:none; font-style:italic; color:#777;">No matches.</p>
+</div>
