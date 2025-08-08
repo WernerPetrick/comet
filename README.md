@@ -1,4 +1,4 @@
-
+![logo](https://github.com/WernerPetrick/comet/blob/main/images/comet_text.png)
 
 Static-first, component-aware site generation for Ruby. Comet converts Markdown + ERB shards into deterministic HTML, annotates interactive islands with a minimal data envelope, and defers JavaScript execution according to explicit hydration strategies.
 
