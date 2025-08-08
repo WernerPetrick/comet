@@ -14,7 +14,7 @@ window.CometActions = {
 		toast.setAttribute("role", "alert");
 		toast.innerHTML = `
       <div class="toast-header">
-        <strong class="me-auto">🚀 Comet</strong>
+        <strong class="me-auto">Comet</strong>
         <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
       </div>
       <div class="toast-body">

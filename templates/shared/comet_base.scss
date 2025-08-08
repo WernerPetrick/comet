@@ -1,0 +1,349 @@
+// Comet base cohesive styles (framework-agnostic)
+// Light CSS normalizations & layout primitives
+
+:root {
+  --comet-font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+  --comet-mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --comet-bg: #0f1115;
+  --comet-bg-alt: #161a23;
+  --comet-surface: #1f2530;
+  --comet-border: #303946;
+  --comet-text: #e6eaf1;
+  --comet-text-dim: #9aa4b1;
+  --comet-accent: #5d75ff;
+  --comet-accent-hover: #7590ff;
+  --comet-radius: 6px;
+  --comet-gap: 1.25rem;
+  --comet-line: 1.5;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  font-family: var(--comet-font-stack);
+  line-height: var(--comet-line);
+  background: linear-gradient(180deg, var(--comet-bg) 0%, var(--comet-bg-alt) 100%);
+  color: var(--comet-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+code,
+pre {
+  font-family: var(--comet-mono-stack);
+  font-size: 0.9em;
+}
+
+pre {
+  padding: 0.75rem 1rem;
+  background: #13171e;
+  border: 1px solid #252d39;
+  border-radius: var(--comet-radius);
+  overflow: auto;
+}
+
+code.inline,
+code:not(pre code) {
+  background: #13171e;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+main {
+  max-width: 72ch;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 2.4rem 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(2.25rem, 5vw, 3rem);
+}
+
+h2 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+}
+
+h3 {
+  font-size: 1.4rem;
+}
+
+h4 {
+  font-size: 1.15rem;
+}
+
+p,
+ul,
+ol {
+  margin: 1rem 0;
+}
+
+ul,
+ol {
+  padding-left: 1.25rem;
+}
+
+li+li {
+  margin-top: 0.35rem;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--comet-border);
+  margin: 3rem 0;
+}
+
+// Links
+a {
+  color: var(--comet-accent);
+  text-decoration: none;
+  transition: color .15s, background-color .15s;
+}
+
+a:hover {
+  color: var(--comet-accent-hover);
+}
+
+// Buttons (generic)
+.button,
+.btn,
+button {
+  --btn-bg: var(--comet-accent);
+  --btn-bg-hover: var(--comet-accent-hover);
+  --btn-fg: #fff;
+  font: inherit;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 0;
+  padding: 0.65rem 1.05rem;
+  border-radius: var(--comet-radius);
+  cursor: pointer;
+  line-height: 1.1;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: background .15s, transform .15s, box-shadow .2s;
+}
+
+.button:hover,
+.btn:hover,
+button:hover {
+  background: var(--btn-bg-hover);
+}
+
+.button:active,
+.btn:active,
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+// Header / Nav
+.header {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--comet-border);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.25rem;
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links a {
+  padding: 0.4rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--comet-text-dim);
+}
+
+.nav-links a:hover {
+  background: var(--comet-surface);
+  color: var(--comet-text);
+}
+
+.nav-group {
+  position: relative;
+}
+
+.nav-group-label {
+  cursor: pointer;
+  padding: 0.4rem 0.65rem;
+  border-radius: 4px;
+  color: var(--comet-text-dim);
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+.nav-group-label:hover {
+  background: var(--comet-surface);
+  color: var(--comet-text);
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  min-width: 200px;
+  background: var(--comet-surface);
+  border: 1px solid var(--comet-border);
+  border-radius: var(--comet-radius);
+  padding: 0.5rem 0;
+  display: none;
+  box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.45);
+}
+
+.nav-group:hover>.nav-dropdown {
+  display: block;
+}
+
+.nav-dropdown a {
+  display: block;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--comet-text-dim);
+}
+
+.nav-dropdown a:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--comet-text);
+}
+
+// Cards
+.card {
+  background: var(--comet-surface);
+  border: 1px solid var(--comet-border);
+  padding: 1.25rem 1.3rem;
+  border-radius: var(--comet-radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform .18s, box-shadow .18s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px -6px rgba(0, 0, 0, 0.5);
+}
+
+.card-title,
+.card h2,
+.card h3 {
+  margin-top: 0;
+}
+
+// Footer
+.footer {
+  margin-top: 4rem;
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--comet-text-dim);
+}
+
+// Tables
+.table-responsive {
+  overflow-x: auto;
+}
+
+// Utility
+.grid {
+  display: grid;
+  gap: var(--comet-gap);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.gap {
+  gap: var(--comet-gap);
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.muted {
+  color: var(--comet-text-dim);
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+// Media Queries
+@media (max-width: 860px) {
+  main {
+    padding: 2rem 1rem 3.5rem;
+  }
+
+  .nav-links {
+    gap: 0.5rem;
+  }
+
+  .nav-dropdown {
+    min-width: 180px;
+  }
+}

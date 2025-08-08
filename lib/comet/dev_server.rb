@@ -62,14 +62,33 @@ module Comet
         handle_request(req, res)
       end
 
-      # Handle shutdown gracefully
-      trap("INT") do
-        puts "\n👋 Shutting down development server..."
-        @listener&.stop
-        server.shutdown
+      # Graceful shutdown (avoid stopping listener inside trap context to prevent ThreadError)
+      shutdown_proc = proc do |signal|
+        puts "\n👋 Received #{signal}. Shutting down development server..."
+        # Only trigger server shutdown here; listener stopped after server loop exits
+        Thread.new { server.shutdown }
       end
 
-      server.start
+      trap("INT") { shutdown_proc.call("INT") }
+      trap("TERM") { shutdown_proc.call("TERM") }
+
+      begin
+        server.start
+      ensure
+        # Safe to stop listener here (normal or interrupted execution)
+        if @listener
+          begin
+            @listener.stop
+          rescue => e
+            warn "Listener stop error: #{e.message}"
+          end
+        end
+        puts "✅ Server stopped."
+      end
+    end
+
+    def stop
+      @listener&.stop
     end
 
     def handle_request(req, res)

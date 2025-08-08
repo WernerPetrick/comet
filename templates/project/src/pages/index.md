@@ -3,7 +3,7 @@ title: "Welcome to <%= config[:name] %>"
 layout: default
 ---
 
-# Welcome to Comet! 🚀
+# Welcome to Comet!
 
 This is your first Comet page. It's written in Markdown and can include shards (components).
 
@@ -15,11 +15,11 @@ Here's a simple button shard:
 
 ## Features
 
-- 📝 **Markdown-first** - Write content in Markdown
-- 🧩 **Component System** - Reusable shards with ERB
-- ⚡ **Selective Hydration** - Control when components become interactive
-- 🎨 **Sass Support** - Built-in SCSS/Sass compilation
-- 🔥 **Hot Reload** - Instant updates during development
+- **Markdown-first** - Write content in Markdown
+- **Component System** - Reusable shards with ERB
+- **Selective Hydration** - Control when components become interactive
+- **Sass Support** - Built-in SCSS/Sass compilation
+- **Hot Reload** - Instant updates during development
 
 ## Getting Started
 
@@ -28,4 +28,4 @@ Here's a simple button shard:
 3. Add styles to `src/assets/styles.scss`
 4. Run `comet dev` to start developing
 
-Happy building! ✨
+Happy building!

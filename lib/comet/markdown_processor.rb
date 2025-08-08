@@ -57,7 +57,8 @@ module Comet
       processed_markdown = shard_processor.process_shortcodes(markdown_content)
 
       # Convert markdown to HTML
-      html_content = @markdown.render(processed_markdown)
+  html_content = @markdown.render(processed_markdown)
+  html_content = post_process_html_for_shards(html_content)
 
       {
         frontmatter: frontmatter,
@@ -69,13 +70,38 @@ module Comet
     def process_content(content, frontmatter = {})
       shard_processor = ShardProcessor.new(@project)
       processed_markdown = shard_processor.process_shortcodes(content)
-      html_content = @markdown.render(processed_markdown)
+  html_content = @markdown.render(processed_markdown)
+  html_content = post_process_html_for_shards(html_content)
 
       {
         frontmatter: frontmatter,
         content: html_content,
         raw_content: content
       }
+    end
+  end
+end
+
+module Comet
+  class MarkdownProcessor
+    # Post HTML pass: process any remaining shard tags not converted in markdown phase,
+    # while preserving <pre><code> blocks (already escaped fences).
+    def post_process_html_for_shards(html)
+      shard_processor = ShardProcessor.new(@project)
+      preserves = {}
+      # Extract pre/code blocks to avoid transforming examples
+      html = html.gsub(/<pre[\s\S]*?<\/pre>/m) do |block|
+        key = "__COMET_PRE_BLOCK_#{preserves.size}__"
+        preserves[key] = block
+        key
+      end
+
+      # Now process any shard invocations in remaining HTML
+      html = shard_processor.process_shortcodes(html)
+
+      # Restore preserved blocks
+      preserves.each { |k, v| html.gsub!(k, v) }
+      html
     end
   end
 end

@@ -63,45 +63,40 @@ document.addEventListener("comet:action", (event) => {
 document.addEventListener("DOMContentLoaded", () => {
 	// Initialize burger menus
 	const burgers = document.querySelectorAll(".navbar-burger");
-	// biome-ignore lint/complexity/noForEach: <explanation>
-	burgers.forEach((burger) => {
+	for (const burger of burgers) {
 		burger.addEventListener("click", CometActions.toggleMobileMenu);
-	});
+	}
 
 	// Close modals when clicking background or close button
 	const modals = document.querySelectorAll(".modal");
-	// biome-ignore lint/complexity/noForEach: <explanation>
-	modals.forEach((modal) => {
+	for (const modal of modals) {
 		// Close on background click
 		modal.querySelector(".modal-background")?.addEventListener("click", () => {
 			modal.classList.remove("is-active");
 		});
 
 		// Close on close button click
-		// biome-ignore lint/complexity/noForEach: <explanation>
-		modal.querySelectorAll(".modal-close, .delete").forEach((closeBtn) => {
+		for (const closeBtn of modal.querySelectorAll(".modal-close, .delete")) {
 			closeBtn.addEventListener("click", () => {
 				modal.classList.remove("is-active");
 			});
-		});
-	});
+		}
+	}
 
 	// Initialize dropdowns
 	const dropdowns = document.querySelectorAll(".dropdown");
-	// biome-ignore lint/complexity/noForEach: <explanation>
-	dropdowns.forEach((dropdown) => {
+	for (const dropdown of dropdowns) {
 		dropdown.addEventListener("click", (event) => {
 			event.stopPropagation();
 			dropdown.classList.toggle("is-active");
 		});
-	});
+	}
 
 	// Close dropdowns when clicking outside
 	document.addEventListener("click", () => {
-		// biome-ignore lint/complexity/noForEach: <explanation>
-		dropdowns.forEach((dropdown) => {
+		for (const dropdown of dropdowns) {
 			dropdown.classList.remove("is-active");
-		});
+		}
 	});
 });
 

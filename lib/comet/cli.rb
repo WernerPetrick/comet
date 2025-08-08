@@ -52,6 +52,10 @@ module Comet
         next unless File.exist?(full_path)
         content = File.read(full_path)
         processed_content = content.gsub("<%= config[:name] %>", project_name)
+        # Inject selected framework into config file once
+        if relative_path == "comet.config.rb" && !processed_content.include?("site.css_framework")
+          processed_content << "\n# Selected CSS framework (set automatically by Comet CLI)\nsite.css_framework = \"#{css_framework}\"\n"
+        end
         File.write(full_path, processed_content)
       end
 
@@ -91,6 +95,36 @@ module Comet
       say "Available CSS frameworks: bulma (default), bootstrap, tailwind, custom", :green
     end
 
+    desc "nav:init", "Scaffold the navbar folder (pages/navbar) with example docs"
+    def nav_init
+      ensure_comet_project!
+
+      target_dir = File.join(Dir.pwd, "src", "pages", "navbar")
+      if Dir.exist?(target_dir)
+        say "Navbar folder already exists at src/pages/navbar", :yellow
+        return
+      end
+
+      say "Scaffolding navbar content...", :green
+
+      template_root = File.join(self.class.source_root, "project", "src", "pages", "navbar")
+      unless Dir.exist?(template_root)
+        say "Template navbar folder missing in gem (unexpected)", :red
+        exit 1
+      end
+
+      Dir.glob(File.join(template_root, "**", "*")) do |path|
+        next if File.directory?(path)
+        rel = path.sub(template_root + "/", "")
+        dest = File.join(target_dir, rel)
+        FileUtils.mkdir_p(File.dirname(dest))
+        FileUtils.cp(path, dest)
+        say "  ✓ #{File.join('src/pages/navbar', rel)}", :blue
+      end
+
+      say "Navbar scaffold created. Rebuild or restart dev server to see links.", :green
+    end
+
     private
 
     def copy_css_framework_files(framework)
@@ -114,6 +148,32 @@ module Comet
       when "custom"
         copy_file("css_frameworks/custom/styles.scss", "src/assets/styles.scss")
         copy_file("css_frameworks/custom/app.js", "src/assets/app.js")
+      end
+
+      # Add shared base styles for cohesive layout look & feel
+      base_src = File.join(self.class.source_root, "shared", "comet_base.scss")
+      if File.exist?(base_src)
+        FileUtils.mkdir_p(File.join(destination_root, "src/assets"))
+        base_dest = File.join(destination_root, "src/assets", "_comet_base.scss")
+        FileUtils.cp(base_src, base_dest)
+
+        if %w[bulma bootstrap custom].include?(framework)
+          styles_file = File.join(destination_root, "src/assets/styles.scss")
+          if File.exist?(styles_file) && !File.read(styles_file).include?("_comet_base")
+            original = File.read(styles_file)
+            # Prepend import so variables & resets apply early
+            File.write(styles_file, "@import 'comet_base';\n" + original)
+          end
+        elsif framework == "tailwind"
+          styles_file = File.join(destination_root, "src/assets/styles.css")
+          if File.exist?(styles_file) && !File.read(styles_file).include?("COMET BASE START")
+            File.open(styles_file, "a") do |f|
+              f.puts "\n/* COMET BASE START */"
+              f.puts File.read(base_src)
+              f.puts "/* COMET BASE END */"
+            end
+          end
+        end
       end
     end
 

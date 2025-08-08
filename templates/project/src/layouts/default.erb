@@ -10,10 +10,28 @@
 <body>
   <header class="header">
     <nav class="nav">
-      <a href="/" class="logo">🚀 <%= site.title %></a>
+      <a href="/" class="logo"><%= site.title %></a>
       <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
+        <% if nav_links.any? %>
+          <% nav_links.each do |entry| %>
+            <% if entry.type == :link %>
+              <a href="<%= entry.url %>"><%= entry.title %></a>
+            <% elsif entry.type == :group %>
+              <div class="nav-group">
+                <span class="nav-group-label"><%= entry.title %></span>
+                <div class="nav-dropdown">
+                  <% entry.children.each do |child| %>
+                    <a href="<%= child.url %>"><%= child.title %></a>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        <% else %>
+          <% fallback_nav_links.each do |entry| %>
+            <a href="<%= entry.url %>"><%= entry.title %></a>
+          <% end %>
+        <% end %>
       </div>
     </nav>
   </header>

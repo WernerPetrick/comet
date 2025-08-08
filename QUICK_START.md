@@ -291,4 +291,4 @@ netlify deploy --prod --dir=dist
 # Upload the contents of 'dist' directory
 ```
 
-That's it! You now have a powerful static site generator with component-based architecture and selective hydration. Happy building! 🚀
+That's it! You now have a powerful static site generator with component-based architecture and selective hydration. Happy building!

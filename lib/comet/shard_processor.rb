@@ -3,7 +3,8 @@ require "json"
 
 module Comet
   class ShardProcessor
-    SHARD_PATTERN = /<%=\s*shard\s+"([^"]+)"(?:\s*,\s*(.+?))?\s*%>/m
+  # Match shard invocation with single or double quotes around name
+  SHARD_PATTERN = /<%=\s*shard\s+["']([^"']+)["'](?:\s*,\s*(.+?))?\s*%>/m
 
     def initialize(project)
       @project = project
@@ -11,16 +12,17 @@ module Comet
     end
 
     def process_shortcodes(content)
-      content.gsub(SHARD_PATTERN) do |match|
+      fences = {}
+      protected = protect_code_fences(content, fences)
+
+      processed = protected.gsub(SHARD_PATTERN) do
         shard_name = $1
         options_str = $2
-
-        # Parse options
         options = parse_shard_options(options_str)
-        
-        # Render the shard
         render_shard(shard_name, options)
       end
+
+      restore_code_fences(processed, fences)
     end
 
     def render_shard(shard_name, options = {})
@@ -101,6 +103,42 @@ module Comet
         template_content = File.read(shard_path)
         ERB.new(template_content, trim_mode: "-")
       end
+    end
+
+    # --- Code fence protection helpers ---
+    def protect_code_fences(content, store)
+      lines = content.lines
+      in_fence = false
+      fence_delim = nil
+      buffer = []
+      current = []
+
+      lines.each do |line|
+        if !in_fence && (line.start_with?('```') || line.start_with?('~~~'))
+          in_fence = true
+          fence_delim = line[/^`+/]
+          current << line
+        elsif in_fence && line.start_with?(fence_delim)
+          current << line
+          placeholder = "__COMET_CODE_FENCE_#{store.size}__"
+            store[placeholder] = current.join
+          buffer << placeholder
+          current = []
+          in_fence = false
+          fence_delim = nil
+        elsif in_fence
+          current << line
+        else
+          buffer << line
+        end
+      end
+      # If unclosed fence, just append back
+      buffer.concat(current) if current.any?
+      buffer.join
+    end
+
+    def restore_code_fences(content, store)
+      store.reduce(content) { |acc, (ph, code)| acc.gsub(ph, code) }
     end
 
     def wrap_with_hydration(content, shard_name, options)
