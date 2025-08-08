@@ -17,3 +17,7 @@ Example shard invocation inside Markdown:
 ```
 
 They render server-side, and can hydrate later in the browser based on the chosen strategy.
+
+### Shards & Meta
+
+You can conditionally set meta via front matter, then reference shard output; shards themselves don’t alter OG tags—use front matter `title`, `description`, and `image`.

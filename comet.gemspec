@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name = "comet"
-  spec.version = "0.1.6"
+  spec.version = "0.2.0"
   spec.authors = ["Werner Petrick"]
 
   spec.summary = "A Ruby-based static site generator"

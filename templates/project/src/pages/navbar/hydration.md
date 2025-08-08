@@ -14,3 +14,7 @@ Comet supports three hydration strategies for shards:
 | visible | When the element scrolls into view |
 
 Pick the lightest strategy that still delivers the UX you need.
+
+### Meta Reminder
+
+Hydration strategy doesn’t affect SEO metadata; add your social preview image in page front matter (`image:`) if needed.

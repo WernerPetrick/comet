@@ -28,4 +28,20 @@ Here's a simple button shard:
 3. Add styles to `src/assets/styles.scss`
 4. Run `comet dev` to start developing
 
+### OpenGraph / Twitter Cards
+
+Set global social defaults in `comet.config.rb` (e.g. `site.url`, `site.twitter`, `site.og_image`).
+
+Override per page by adding front matter keys:
+
+```
+---
+title: "Custom Title"
+description: "Custom description up to ~200 characters."
+image: /assets/og-custom.png   # or og_image: /assets/og-custom.png
+---
+```
+
+If no `image` is provided, it falls back to `og_image` or `site.og_image`.
+
 Happy building!
